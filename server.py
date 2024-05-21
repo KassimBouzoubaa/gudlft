@@ -1,5 +1,6 @@
 import json
 from flask import Flask, render_template, request, redirect, flash, url_for, session, abort
+from utils import search_club, search_competition, subtract_places_from_club, subtract_places_from_competition
 
 
 def loadClubs():
@@ -38,15 +39,19 @@ def showSummary():
         flash("No club found with the provided email.")
         return redirect(url_for("index"))
 
-@app.route('/book/<competition>/<club>')
-def book(competition,club):
-    foundClub = [c for c in clubs if c['name'] == club][0]
-    foundCompetition = [c for c in competitions if c['name'] == competition][0]
+@app.route("/book/<string:competition>/<string:club>")
+def book(competition, club):
+    
+    foundClub = search_club(club, clubs)
+    foundCompetition = search_competition(competition, competitions)
+    
     if foundClub and foundCompetition:
-        return render_template('booking.html',club=foundClub,competition=foundCompetition)
+        return render_template(
+            "booking.html", club=foundClub, competition=foundCompetition
+        )
     else:
-        flash("No club found with the provided email.")
-        return redirect(url_for("index"))
+        flash("Club or competition not found - please try again")
+        return render_template("welcome.html", club=club, competitions=competitions) 
 
 
 @app.route('/purchasePlaces',methods=['POST'])

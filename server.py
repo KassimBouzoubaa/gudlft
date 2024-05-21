@@ -54,14 +54,50 @@ def book(competition, club):
         return render_template("welcome.html", club=club, competitions=competitions) 
 
 
-@app.route('/purchasePlaces',methods=['POST'])
+@app.route("/purchasePlaces", methods=["POST"])
 def purchasePlaces():
-    competition = [c for c in competitions if c['name'] == request.form['competition']][0]
-    club = [c for c in clubs if c['name'] == request.form['club']][0]
-    placesRequired = int(request.form['places'])
-    competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
-    flash('Great-booking complete!')
-    return render_template('welcome.html', club=club, competitions=competitions)
+        
+    # Récupération des données d'entrée
+    club_input = request.form.get("club")
+    competition_input = request.form.get("competition")
+    places_required_input = request.form.get("places")
+
+    # Vérification des données d'entrée
+    if not club_input or not competition_input or not places_required_input:
+        abort(400)
+
+    try:
+        # Convertir le nombre de places requis en entier
+        places_required = int(places_required_input)
+    except ValueError:
+        # Si une erreur se produit lors de la conversion, renvoyer une erreur 400 (Bad Request)
+        abort(400)  # Erreur: places_required_input n'est pas un entier valide
+
+    # Recherche du club et de la compétition
+    club = search_club(club_input, clubs)
+    competition = search_competition(competition_input, competitions)
+    
+    if club is None or competition is None:
+        flash("Club or competition not found - please try again")
+        return render_template("welcome.html", club=club, competitions=competitions) 
+
+    # Vérification de la disponibilité des places et des points du club
+    if (
+        places_required <= int(club["points"])
+        and places_required <= 12
+        and places_required <= int(competition["numberOfPlaces"])
+    ):
+        competition["numberOfPlaces"] = subtract_places_from_competition(competition, places_required)        
+        club["points"] = subtract_places_from_club(club, places_required)
+        flash(f"Great-booking complete! You bought {places_required} places.")
+    elif places_required > int(club["points"]):
+        flash(f"Insufficient number of points available")
+    elif places_required > 12:
+        flash(f"You cannot reserve more than 12 places in a competition")
+    else:
+        flash(f"There are not enough places available")
+
+    return render_template("welcome.html", club=club, competitions=competitions)
 
 
 # TODO: Add route for points display

@@ -38,6 +38,16 @@ def showSummary():
         flash("No club found with the provided email.")
         return redirect(url_for("index"))
 
+@app.route('/book/<competition>/<club>')
+def book(competition,club):
+    foundClub = [c for c in clubs if c['name'] == club][0]
+    foundCompetition = [c for c in competitions if c['name'] == competition][0]
+    if foundClub and foundCompetition:
+        return render_template('booking.html',club=foundClub,competition=foundCompetition)
+    else:
+        flash("No club found with the provided email.")
+        return redirect(url_for("index"))
+
 
 @app.route('/purchasePlaces',methods=['POST'])
 def purchasePlaces():
